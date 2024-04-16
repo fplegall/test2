@@ -1,0 +1,479 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,setspace,url}
+\usepackage{bm}
+\usepackage{latexsym}
+\usepackage{amsthm}
+\usepackage{subfig}
+\usepackage{float}
+\usepackage{algorithmic}
+\usepackage[ruled]{algorithm}
+\usepackage{bigstrut,array,multirow}
+\usepackage{here}
+\usepackage{color}
+\usepackage{url}
+
+%===============================
+\usepackage[backend=biber, style=numeric, maxbibnames=99]{biblatex}
+\addbibresource{refs.bib}
+\renewbibmacro{in:}{} %remove "In:"
+\DeclareFieldFormat*{title}{#1} %remove quotes
+
+\AtEveryBibitem{
+  \ifentrytype{article}{
+    \clearlist{language}
+    \clearfield{eprint}
+%    \clearfield{eprinttype}
+    \clearfield{isbn}
+    \clearfield{issn}
+    \clearfield{issue}
+    \clearfield{month}
+    \clearfield{url}
+  }{}
+  \ifentrytype{book}{
+    \clearlist{address}
+    \clearlist{location}
+    \clearlist{language}
+    \clearfield{url}
+  }{}
+  \ifentrytype{inbook}{
+    \clearfield{isbn}
+    \clearfield{url}
+  }{}
+  \ifentrytype{inproceedings}{
+    \clearfield{isbn}
+    \clearfield{issn}
+    \clearlist{publisher}
+    \clearname{editor}
+    \clearfield{url}
+  }{}
+}
+%======================
+
+
+% Theorem environment declarations
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{lemma}{Lemma}
+\newtheorem{condition}{Condition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{property}{Property}
+\newtheorem{definition}{Definition}
+\newtheorem{fact}{Fact}
+\renewcommand{\thecondition}{C\arabic{cnd}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{claim}{Claim}
+\newtheorem{result}{Result}
+\theoremstyle{definition}
+
+\begin{document}
+\include{mymacros.tex}
+
+\title{On the Density of Low Energy States of $k$-Local Hamiltonians}
+\date{}
+\author{Harry Buhrman, Sevag Gharibian, Fran{\c c}ois Le Gall, Suguru Tamaki}
+
+\maketitle
+\thispagestyle{empty}
+%\setcounter{page}{0}
+
+\section{Introduction}
+\paragraph{Exact and approximate algorithms for $\boldsymbol{k}$-SAT.}
+In 1999, Sch\"oning \cite{SchoningFOCS99} gave a simple randomized algorithm for $k$-SAT on $n$ variables running in $O(2^{(1-c/k)n})$ time for some universal constant $c>0$. While the constant $c$ has been improved over the years, no similar running is known for MAX-$k$-SAT with $k\ge 3$.\footnote{For $k=2$, Williams \cite{WilliamsICALP04} showed how to obtain running time $O^\ast(2^{\omega n/3})$, where $\omega$ is the exponent of matrix multiplication. Here the notation $O^\ast(\cdot)$ removes $\poly(n)$ factors.}
+
+There nevertheless exist nontrivial classical \emph{approximation} algorithms for MAX-$k$-SAT. In such algorithms, the goal is to decide whether there exists an assignment that satisfies at least $m^\ast-\varepsilon m$ clauses, where $m$ denotes the number of clauses in the formula and $m^\ast$ denotes the maximum number of clauses satisfiable by an assignment. Hirsch \cite{Hirsch03} constructed a randomized algorithm solving this problem with high probability in time $O\left(2^{(1-ck/\varepsilon)n}\right)$ for some universal constant $c>0$. The term $k/\varepsilon$ in the exponent was later improved, first by Escoffier, Vangelis and Emeric \cite{Escoffier+14} and then by Alman, Chan and Williams \cite{Alman+SODA20}. 
+%As explained in Appendix \ref{classical}, similar ideas combined with quantum amplitude amplification \cite{Brassard2002} can be used to obtain running time $O\left(2^{(1-c)n/2}\right)$ in the quantum setting. A natural question is whether such a non-trivial running time can be obtained for the $k$-local Hamiltonian problem as well.
+
+
+\paragraph{Algorithms for the $\boldsymbol{k}$-local Hamiltonian problem.}
+In this note we investigate whether similar results can be obtained for the $k$-local Hamiltonian problem, the central problem in quantum Hamiltonian complexity.
+
+Consider a $k$-local Hamiltonian
+\[
+H=\sum_{i=1}^m H_i
+\]
+acting on $n$ qubits, where $\norm{H_i}\le 1$ for all $i\in\{1,\ldots,m\}$. Let $E^\ast$ denote the ground energy of $H$ (observe that $E^\ast\in[-m,m]$). Prior works \cite{Apeldoorn+20,Ge+19,Kerzner+23,Lin+20,Poulin+09} have shown how to obtain an estimate $\hat E$ such that 
+\[
+\abs{E^\ast-\hat E}\le \varepsilon m
+\]
+holds with high probability in $O^\ast(2^{n/2}\cdot \poly(1/\varepsilon))$ time.\footnote{The basic strategy (see \cite{Apeldoorn+20,Kerzner+23}) is to combine quantum phase estimation and quantum amplitude amplification. Better (but still polynomial) dependence in $1/\varepsilon$ can be obtained by using more complicated approaches \cite{Ge+19,Lin+20,Poulin+09}.}
+%\cite{Apeldoorn+20,Ge+19,Gilyen+STOC19,Kerenidis+PRA20,Kerzner+23,Lin+20,Martyn+21,Poulin+09}
+
+
+In this note we show the following better bound.
+\begin{theorem}\label{th:alg}
+	For any $\varepsilon\ge 0$, there exists a quantum algorithm running in time
+	\begin{equation}\label{eq:th}
+	O^\ast\left(2^{\left(1-\frac{\varepsilon}{2k+\varepsilon}\right)n/2}\right)
+	\end{equation}
+	that outputs an estimate $\hat E$ such that 
+	\[
+	\abs{E^\ast-\hat E}\le \varepsilon m
+	\]
+	holds with high probability.
+\end{theorem}
+
+Our main technical contribution is a result about the density of low-energy states in $k$-local Hamiltonians. For any $\varepsilon\ge 0$, let $\Cc(H,\varepsilon)$ denote the number of eigenvalues $\lambda$ of $H$ such that $\lambda\in [E^\ast,E^\ast+\varepsilon m]$. Here is our result.
+\begin{theorem}\label{th:main}
+For any $\varepsilon\ge 0$, we have 
+\[
+\Cc(H,\varepsilon)\ge 2^{\floor{\varepsilon n/(2k+\varepsilon)}}.
+\]
+\end{theorem}
+Theorem \ref{th:alg} follows from Theorem \ref{th:main} by using quantum amplitude amplification.\footnote{More details should be given but this shouldn't be hard.}
+
+\paragraph{Open problems.} Here is a list of open problems.
+\begin{itemize}
+	\item 
+	Can we modify Theorem \ref{th:alg} to generate a low-energy state with the same complexity. I think this should be very easy (actually, almost straightforward) by following the approach from \cite[Section 2]{Lin+20}.
+	\item 
+	Can we dequantize Theorem \ref{th:alg} and get a classical algorithm for the same problem running in time $O^\ast(2^{(1-c)n})$ for some constant $c>0$ depending only on $k$ and $\varepsilon$? The best classical strategy I have in mind (based on the power method) leads to complexity $O^\ast(2^{n})$. Is there a way to exploit the density of low-energy states shown in Theorem \ref{th:main} to improve this bound in the classical setting as well?
+	\item 
+	Can we remove the $k$ from the exponent in the complexity of Equation (\ref{eq:th})? Note that this can be done for MAX-$k$-SAT in the classical case \cite{Alman+SODA20,Escoffier+14}. Of course, we can only expect to be able to do it only if the energy of each term $H_i$ of the Hamiltonian can be computed efficiently (for instance if $H_i$ is a tensor product of 1-qubit observables).
+	\item 
+	Can our results be a starting point for establishing a new Quantum SETH based on the hardness of the $k$-local Hamiltonian problem, which would be stronger than the versions in \cite{Aaronson+20,Buhrman+21,Buhrman+22,Chen+23} based on the hardness of SAT and thus possibly more useful?
+	
+\end{itemize}
+
+%======================
+%\paragraph*{Prior works.}
+%\cite{Dalzell+STOC23}.
+
+\section{Preliminary: Theorem about Eigenvalues}
+
+We will need the following general result from linear algebra. We refer to \cite{Higham} for a good (online) reference.
+
+\begin{theorem}[Courant-Fischer theorem, or min-max theorem]\label{th:minmax}
+Let $A\in\Comp^{N\times N}$ be a Hermitian matrix with eigenvalues $\alpha_1\le\alpha_2\le\cdots\le\alpha_{N}$. For any $k\in\set{1}{N}$ and any $k$-dimensional subspace $V\subseteq \Comp^N$, we have 
+\[
+\max_{\ket{\varphi}\in V}\left\{\braket{\varphi|A}{\varphi}\right\}\ge \alpha_k,
+\]
+where the maximum is taken over all unit-norm vectors $\ket{\varphi}$ in $V$.
+\end{theorem}
+
+%=====================
+\section{Preliminary: Decomposing the ground state of $H$}\label{sec:pre}
+We write the eigenvalues of $H$ as follows:
+\[
+E^\ast=\lambda_1\le\lambda_2\le\cdots\le\lambda_{2^n}.
+\]
+
+Remember that $H$ acts on $n$ qubits, and each term $H_i$ acts non-trivially on at most $k$ terms. For each qubit, we define its \emph{occurrence in }$H$ as the number of local terms $H_i$ acting nontrivially on it. For any $\delta\ge 1$, let $S_\delta$ denote the set of qubits that have occurrence in $H$ at most $\delta km/n$. The following lemma is easy to show.
+
+\begin{lemma}\label{lemma:delta}
+For any $\delta> 1$, we have 
+\[
+\abs{S_\delta}\ge \left(1-\frac{1}{\delta}\right)n.
+\]
+\end{lemma}
+\begin{proof}
+Each term $H_i$ acts non-trivially on only $k$ qubits. Since each qubit not in $S_\delta$ has  occurrence in $H$ at least $\delta km/n$, we get the inequality 
+\[
+\left(n-\abs{S_\delta}\right)\cdot \frac{\delta km}{n} \le km,
+\]
+which gives the claimed lower bound on $\abs{S_\delta}$.
+\end{proof}
+From now we assume that the qubits in $S_\delta$ are the leftmost $\abs{S_\delta}$ qubits. This can be done without loss of generality: if this is not the case we can simply permute the qubits.
+
+Let $\ket{\Phi}$ denote the goundstate of $H$. For an integer $r\in\{1,\ldots,|S_\delta|\}$ to be set later, decompose the vector space associated with $\ket{\varphi}$ in two: the vector space corresponding to the leftmost $r$ arbitrary qubits (which are in $S_\delta$ from our assumption), and the vector space corresponding to the remaining $n-r$ qubits. Consider the Schmidt decomposition of $\ket{\Phi}$ with respect to this decomposition:
+\[
+\ket{\Phi}=\sum_{j=1}^{2^r}a_j\ket{\varphi_j}\ket{\psi_j},
+\]
+where $\{\ket{\varphi_j}\}_i$ is an orthonormal basis of $\Comp^{2^r}$, $\{\ket{\psi_j}\}_j$ is a set of orthonormal vectors of $\Comp^{2^{n-r}}$, and the $a_j$'s are real and non-negative. Choose $j_0\in\set{1}{2^r-1}$ such that 
+\[
+\Tr\left(H(\ket{0}\bra{0}\otimes \ket{\psi_{j_0}}\bra{\psi_{j_0}})\right)
+=\min_{j\in\set{1}{2^r}}
+\big\{
+\Tr\left(H(\ket{0}\bra{0}\otimes \ket{\psi_j}\bra{\psi_j})\right)
+\big\}
+\]
+and write $\ket{\overline{\psi}}=\ket{\psi_{j_0}}$.
+
+
+%========================
+\section{Proof of Theorem \ref{th:main}}
+We use the decomposition of the ground state from Section \ref{sec:pre} with 
+\[
+r=\floor{\frac{\varepsilon n}{2k+\varepsilon}}.
+\] 
+Note that the decomposition requires $r\le |S_\delta|$. Lemma \ref{lemma:delta} implies that this condition is satisfied if we take
+\[
+\delta = 1+\frac{\varepsilon}{2k}.
+\]
+
+We show the following lemma.
+\begin{lemma}\label{lemma:main}
+For any state $\ket{\varphi}$ on the first $r$ qubits, we have
+\[
+\Tr\left(H(\ket{\varphi}\bra{\varphi}\otimes \ket{\overline{\psi}}\bra{\overline{\psi}})\right)
+\le E^\ast+\varepsilon m.
+\]
+\end{lemma}
+\begin{proof}
+Define the set 
+\[
+T=\left\{
+i\in\set{1}{m}\:|\: H_i \textrm{ acts trivially on all the first $r$ qubits}.
+\right\}.
+\]
+Since each of the first $r$ qubits is involved in at most $\delta k m/n$ terms of $H$, we have 
+\[
+|T|\ge m - \frac{\delta k mr}{n}.
+\]
+
+
+Consider the state obtained by tracing out the first $r$ qubits of $\ket{\Phi}$. We can write it as follows:
+\[
+\rho=\sum_{i=1}^{2^r} \abs{a_i}^2\ket{\psi_i}\bra{\psi_i}.
+\]
+Observe that the following equation holds for any $i\in T$ and any state $\ket{\varphi}$ on the first $r$ qubits.
+\begin{align}
+\label{eq1}
+\Tr\left(H_i(\ket{\varphi}\bra{\varphi}\otimes \rho)\right)&=
+\Tr\left(H_i\ket{\Phi}\bra{\Phi}\right)
+\end{align}
+We also have the following upper bound for any $i\in T$ and any state $\ket{\varphi}$ on the first $r$ qubits:
+\begin{equation}
+\label{eq2}
+\begin{aligned}
+\Tr\left(H_i(\ket{\varphi}\bra{\varphi}\otimes \ket{\overline{\psi}}\bra{\overline{\psi}})\right)
+&=
+\Tr\left(H_i(\ket{0}\bra{0}\otimes \ket{\overline{\psi}}\bra{\overline{\psi}})\right)\\
+&\le
+\sum_{j=1}^{2^r}|a_i|^2\Tr\left(H_i(\ket{0}\bra{0}\otimes \ket{\psi_i}\bra{\psi_i})\right)\\
+&=
+\Tr\left(H_i(\ket{0}\bra{0}\otimes \rho)\right)\\
+&=
+\Tr\left(H_i(\ket{\varphi}\bra{\varphi}\otimes \rho)\right).
+\end{aligned}
+\end{equation}
+
+
+Using (\ref{eq1}) and (\ref{eq2}), for any state $\ket{\varphi}$ on the first $r$ qubits we can write
+\begin{align*}
+\Tr\left(H(\ket{\varphi}\bra{\varphi}\otimes \ket{\overline{\psi}}\bra{\overline{\psi}})\right)&=
+\sum_{i\in T}\Tr\left(H_i(\ket{\varphi}\bra{\varphi}\otimes \ket{\overline{\psi}}\bra{\overline{\psi}})\right)+
+\sum_{i\notin T}\Tr\left(H_i(\ket{\varphi}\bra{\varphi}\otimes \ket{\overline{\psi}}\bra{\overline{\psi}})\right)\\
+&\le
+\sum_{i\in T}\Tr\left(H_i(\ket{\varphi}\bra{\varphi}\otimes \rho)\right)+
+\sum_{i\notin T}\norm{H_i}\\
+&=
+\sum_{i\in T}\Tr\left(H_i\ket{\Phi}\bra{\Phi}\right)
++
+\sum_{i\notin T}\norm{H_i}\\
+&\le
+E^\ast
++
+2\sum_{i\notin T}\norm{H_i}
+\\
+&\le
+E^\ast + \frac{2\delta k mr}{n}\\
+&\le
+E^\ast+\varepsilon m,
+\end{align*}
+which gives the claimed upper bound.
+\end{proof}
+
+Consider the $2^r$-dimensional subspace spanned by the vectors $\ket{\varphi}\ket{\overline\psi}$, for all states $\ket{\varphi}$ on the first $r$ qubits. Lemma \ref{lemma:main} and Theorem \ref{th:minmax} imply that 
+\[
+\lambda_{2^r}\le E^\ast+\varepsilon m.
+\]
+We conclude that 
+\[
+\Cc(H,\varepsilon)\ge 2^r= 2^{\floor{\varepsilon n/(2k+\varepsilon)}},
+\]
+which proves Theorem \ref{th:main}.
+
+%=========================================
+\appendix
+\section{Classical Bound for MAX-$\boldsymbol{k}$-SAT}\label{classical}
+In this setting, we show a result similar to Theorem \ref{th:main} for MAX-$k$-SAT.
+
+Let $f$ be any instance of $k$-SAT with $n$ variables and $m$ clauses. For an assignment $z\in\{0,1\}^n$, let us write $\#(f,z)$ the number of clauses in $f$ satisfied by $z$, and write 
+\[
+m^\ast=\max_{z\in\{0,1\}^n}\#(f,z).
+\]
+We show the following theorem. 
+\begin{theorem}\label{th:class}
+	For any $\varepsilon>0$, there exist at least 
+	\[
+	\Omega^\ast\left(2^{H\left(\frac{\varepsilon}{\varepsilon+k}\right) n}\right),
+	\]
+	 assignments $z\in\{0,1\}^n$ such that $\#(f,z)\ge m^\ast-\varepsilon m$ holds.
+	Here $H(\cdot)$ denotes the binary entropy function.
+\end{theorem}
+Theorem~\ref{th:class} immediately gives a (classical) randomized algorithm working in time
+\[
+O^\ast\left(2^{\left(1-H\left(\frac{\varepsilon}{\varepsilon+k}\right)\right) n}\right)
+=
+O^\ast\left(\left(2- H\left(\frac{\varepsilon}{\varepsilon+k}\right)\right)^n\right)
+\]
+that finds with high probability an assignment $z\in\{0,1\}^n$ such that $\#(f,z)\ge m^\ast-\varepsilon m$, by sampling. Note that this is actually slightly better than the complexity of Hirsch's algorithm~\cite{Hirsch03}.\footnote{The complexity of Hirsch's algorithm is $O^\ast((2-\Omega(\varepsilon/k))^n)$.}
+
+\begin{proof}[Proof of Theorem \ref{th:class}]
+For each variable, we define its \emph{occurrence in }$f$ as the number of clauses including it (or its negation). For any $\delta\ge 1$, let $S_\delta$ denote the set of variables that have occurrence in $f$ at most $\delta km/n$. 
+The following inequality is easy to show by a counting argument (see the proof of Lemma \ref{lemma:delta} for details):
+\begin{equation}\label{eq:cl}
+\abs{S_\delta}\ge \left(1-\frac{1}{\delta}\right)n.
+\end{equation}
+
+We take 
+\[
+\delta = 1+\frac{\varepsilon}{k}
+\]
+and
+\[
+r=\floor{\frac{\varepsilon n}{k+\varepsilon}}.
+\] 
+Observe that the inequality $r\le |S_\delta|$ holds due to Equation (\ref{eq:cl}). Let $\Sigma\subseteq\{0,1\}^n$ denote the set of all assignments that are obtained from $z^\ast$ by flipping $r$ variables chosen from $S_\delta$. Observe that 
+\[
+\abs{\Sigma}= \binom{n}{r} \ge  \frac{2^{H\left(\frac{r}{n}\right) n}}{n+1}
+=\Omega^\ast\left(2^{H\left(\frac{\varepsilon}{\varepsilon+k}\right) n}\right).
+\]
+
+For any $z\in \Sigma$, we have
+\[
+	\#(f,z)
+	\ge m^\ast - \frac{\delta k m r}{n}
+	\ge m^\ast - \varepsilon m.
+\]
+which proves the theorem.
+\end{proof}
+
+%For any $\delta>0$, define the set 
+%\[
+%S_\delta = \left\{z\in\{0,1\}^n\:|\: \Delta(z,z^\ast)\le\delta n\right\},
+%\]
+%where $\Delta(z,z^\ast)$ denotes the Hamming distance between $z$ and $z^\ast$.
+%We have 
+%\[
+%\abs{S_\delta}=\sum_{i=0}^{\floor{\delta n}}{n \choose i} \approx 2^{H(\delta) n}.
+%\]
+%
+%\begin{lemma}\label{lemma2}
+%	\[
+%	\E_{z\in S_\delta}[\#(f,z)]\ge (1-3\delta)m^\ast.
+%	\]
+%\end{lemma}
+%\begin{proof}
+%	Each clause in $f$ contains at most $k$ variables. Flipping at random one of the $n$ bits of $z^\ast$ will change the value of this clause with probability at most $k/m$. We conclude that 
+%	\[
+%	\E_{z\in S_\delta}[\#(f,z)]\ge m^\ast - \frac{km}{n},
+%	\]
+%	as claimed.
+%\end{proof}
+%
+%\begin{lemma}
+%	We have 
+%	\[\abs{\left\{z\in S_\delta\:|\: \#(f,z)\ge (1-4\delta)m^\ast\right\}}\ge \frac{\abs{S_\delta}}{4}.
+%	\]
+%	
+%\end{lemma}
+%\begin{proof}
+%	Let us write 
+%	\[
+%	A = \abs{\left\{z\in S_\delta\:|\: \#(f,z)\ge (1-4\delta)m^\ast\right\}}.
+%	\]
+%	We have 
+%	\begin{align*}
+%			\E_{z\in S_\delta}[\#(f,z)]
+%			&\le \frac{A}{\abs{S_\delta}}m^\ast +  \frac{\abs{S_\delta}-A}{\abs{S_\delta}}(1-4\delta) m^\ast\\
+%			&=(1-4\delta) m^\ast + \frac{4\delta A}{\abs{S_\delta}}m^\ast.
+%	\end{align*}
+%	From Lemma \ref{lemma2} we get ...
+%\end{proof}
+
+%=====================================
+
+\section{Alternative Proof of Theorem \ref{th:main}}
+In this appendix we use a different (but similar) approach to prove the following theorem, which is slightly weaker than Theorem \ref{th:main}.
+\begin{theorem}\label{th:main2}
+	For any $\varepsilon>0$, 
+	\[
+	\Cc(H,\varepsilon)\ge \max_{\eta\in[0,1]}\left\{(1-\eta)2^{\floor{\varepsilon\eta n/(2k+\varepsilon\eta)}}\right\}.
+	\]
+\end{theorem}
+It is not clear how to find a (nice) analytic upper bound for the bound of Theorem \ref{th:main2}, but we can get concrete bounds by taking concrete values of $\eta$. For instance, by taking $\eta=2$ we obtain the bound
+\[
+\Cc(H,\varepsilon)\ge 2^{\floor{\varepsilon\eta /(4k+\varepsilon)}-1}.
+\]
+
+\subsection{Another theorem about eigenvalues}
+We will need the following general result from linear algebra. We refer to \cite{Higham} for a good (online) reference.
+\begin{theorem}[Cauchy interlace theorem]\label{th:Cauchy}
+	Let $A\in\Comp^{N\times N}$ be a Hermitian matrix with eigenvalues $\alpha_1\le\alpha_2\le\cdots\le\alpha_{N}$. For any $k\in\{1,\ldots, N\}$, consider its leading principal submatrix $A_k$ of order $k$ (i.e., the square submatrix that contains the first $k$ diagonal entries of $A$) and denote its eigenvalues $\beta_1\le\beta_2\le\cdots\le\beta_{k}$. Then 
+	\[
+	\alpha_i\le \beta_i
+	\]
+	holds for all $i\in\{1,\ldots,k\}$. In particular we have 
+	\[
+	\sum_{i=1}^k\alpha_i\le \Tr(A_k).
+	\]
+\end{theorem}
+
+\subsection{Construction of orthogonal vectors}\label{sub:const}
+We use the notations of Section \ref{sec:pre}.
+For each $\ell\in \{0,\ldots,2^r-1\}$, define the state 
+\[
+\ket{\Phi_\ell}=\sum_{j=1}^{2^r}a_i\ket{\varphi_{j+\ell}}\ket{\psi_j},
+\]
+where we use the convention $\ket{\varphi_{j+\ell}}=\ket{\varphi_{j+\ell-2^r}}$ when $j+\ell>2^r$.
+
+We can easily show the following two lemmas.
+\begin{lemma}
+	The states $\ket{\Phi_\ell}$ for $\ell\in \{0,\ldots,2^r-1\}$ are mutually orthogonal.
+\end{lemma}
+\begin{proof}
+	For distinct $\ell,\ell'$ we have 
+	\[
+	\langle \Phi_\ell\ket{\Phi_{\ell'}}=
+	\sum_{j=1}^{2^r}|a_j|^2\langle 
+	\varphi_{j+\ell}\ket{\varphi_{j+\ell'}}=0.
+	\]
+\end{proof}
+\begin{lemma}\label{lemma:energy}
+	For any $\ell\in \{0,\ldots,2^r-1\}$,
+	\[
+	\bra{\Phi_\ell}H\ket{\Phi_\ell}\le E^\ast + \frac{2\delta k mr}{n}.
+	\]
+\end{lemma}
+\begin{proof}
+	The state $\ket{\Phi_j}$ can be obtained from $\ket{\Phi}$ by acting on the first $r$ qubits. Since each of the first $r$ qubits is involved in at most $\delta k m/n$ terms of $H$, and each term of $H$ has unit norm, this can modify the energy at most by $2\delta k mr/n$.
+\end{proof}
+
+\subsection{Proof of Theorem \ref{th:main2}}
+Let us fix $\eta\in[0,1]$.
+We use the decomposition of the ground state from Section \ref{sec:pre} with 
+\[
+r=\floor{\frac{\varepsilon\eta n}{2k+\varepsilon\eta}}.
+\] 
+Note that the decomposition requires $r\le |S_\delta|$. Lemma \ref{lemma:delta} implies that this condition is satisfied if we take
+\[
+\delta = 1+\frac{\varepsilon\eta}{2k}.
+\]
+
+We use the construction of Section \ref{sub:const} to obtain $2^{r}$ mutually orthogonal vectors $\ket{\Phi_\ell}$ such that 
+\begin{equation*}\label{cond}
+	\bra{\Phi_\ell}H\ket{\Phi_\ell}\le E^\ast + \frac{2\delta k mr}{n} \le E^\ast + \varepsilon\eta m
+\end{equation*}
+holds for each $\ell$. Now we extend the set $\{\ket{\Phi_\ell}\}_\ell$ into an orthonormal basis of $\Comp^{2^n}$. Let $B\in\Comp^{2^n\times 2^n}$ be the matrix corresponding to $H$ in this new basis.  From Theorem \ref{th:Cauchy}, we get
+\[
+\sum_{i=1}^{2^{r}} \lambda_i \le \sum_{i=1}^{2^{r}} b_{ii} \le 2^{r} \left(E^\ast + \varepsilon\eta m\right).
+\]
+Since 
+\[
+\sum_{i=1}^{2^{r}} \lambda_i\ge \Cc(H,\varepsilon) E^\ast +(2^{r}-\Cc(H,\varepsilon))(E^\ast+\varepsilon m)=2^{r}E^\ast +(2^{r}-\Cc(H,\varepsilon))\varepsilon m,
+\]
+we conclude that
+\[
+\Cc(H,\varepsilon)\ge (1-\eta)2^{r}= (1-\eta)2^{\floor{\varepsilon\eta n/(2k+\varepsilon\eta)}},
+\]
+which proves Theorem \ref{th:main2}.
+%=====================================
+%\bibliographystyle{plain}
+%\bibliography{refs}
+\printbibliography
+%=====================================
+\end{document}
+
